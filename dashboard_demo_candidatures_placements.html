@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Applications & Placements Dashboard (fictitious data)</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#1e293b; --muted:#64748b; --border:#e2e8f0;
+  --primary:#2563eb; --primary-soft:#dbeafe; --accent:#10b981;
+  --radius:16px; --shadow:0 1px 2px rgba(15,23,42,.06),0 4px 16px rgba(15,23,42,.06);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+header.topbar{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#10b981);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center}
+.brand h1{font-size:18px;margin:0}
+.brand .sub{color:var(--muted);font-size:12px}
+.chip{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:999px;background:#fef3c7;color:#92400e;font-size:11px;font-weight:600;vertical-align:middle}
+.filters{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+label.f{display:flex;flex-direction:column;font-size:11px;color:var(--muted);gap:4px;text-transform:uppercase;letter-spacing:.04em}
+select{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'><path fill='%2364748b' d='M7 10l5 5 5-5z'/></svg>") no-repeat right 10px center;border:1px solid var(--border);border-radius:10px;padding:8px 30px 8px 12px;font-size:13px;color:var(--text);min-width:150px;cursor:pointer}
+select:focus{outline:2px solid var(--primary-soft);border-color:var(--primary)}
+.btn{border:none;background:var(--primary);color:#fff;border-radius:10px;padding:9px 16px;font-weight:600;cursor:pointer;font-size:13px}
+.btn:hover{filter:brightness(1.08)}
+main{padding:24px 28px 40px;max-width:1500px;margin:0 auto}
+.section{margin-bottom:36px}
+.section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:14px;flex-wrap:wrap}
+.section-head h2{margin:0;font-size:20px}
+.section-head p{margin:4px 0 0;color:var(--muted)}
+.section-filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:18px 20px;min-width:0}
+.card h3{margin:0 0 12px;font-size:15px}
+.span-4{grid-column:span 4}.span-6{grid-column:span 6}.span-8{grid-column:span 8}.span-12{grid-column:span 12}
+.chart{position:relative;height:280px}
+.chart.tall{height:340px}
+.tbl-wrap{overflow:auto;max-height:440px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);position:sticky;top:0;background:#fff}
+tfoot th{position:static;color:var(--text);font-size:13px;text-transform:none}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.bar{height:8px;background:#eef2ff;border-radius:6px;overflow:hidden;min-width:120px}
+.bar span{display:block;height:100%;background:linear-gradient(90deg,#2563eb,#10b981);border-radius:6px}
+.toolbar{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.toolbar h3{margin:0}
+footer{color:var(--muted);text-align:center;font-size:12px;padding:10px 20px 30px}
+@media (max-width:1100px){
+  .span-4,.span-6,.span-8{grid-column:span 12}
+}
+@media (max-width:640px){
+  main{padding:16px}
+  header.topbar{padding:12px 16px}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div>
+      <h1>Applications &amp; Placements</h1>
+    </div>
+  </div>
+  <div class="filters">
+    <label class="f">From<select id="gDebut"></select></label>
+    <label class="f">To<select id="gFin"></select></label>
+    <label class="f">OPCO<select id="gOpco"></select></label>
+    <label class="f">LOB<select id="gLob"></select></label>
+    <button class="btn" id="gReset">Reset</button>
+  </div>
+</header>
+
+<main>
+  <!-- ===================== SECTION 1 : APPLICATIONS ===================== -->
+  <section class="section" id="sec-apps">
+    <div class="section-head">
+      <div>
+        <h2>1. Applications analysis</h2>
+      </div>
+      <div class="section-filters">
+        <label class="f">Channel<select id="fCanal"></select></label>
+        <label class="f">Job category<select id="fCat"></select></label>
+        <label class="f">Worksite State<select id="fAState"></select></label>
+        <label class="f">Worksite City<select id="fACity"></select></label>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="card span-6">
+        <h3>By channel</h3>
+        <div class="chart"><canvas id="cCanal"></canvas></div>
+      </div>
+      <div class="card span-6">
+        <h3>By job category (top 10)</h3>
+        <div class="chart"><canvas id="cCat"></canvas></div>
+      </div>
+      <div class="card span-4">
+        <h3>By OPCO</h3>
+        <div class="chart"><canvas id="cOpco"></canvas></div>
+      </div>
+      <div class="card span-8">
+        <h3>By line of business (LOB)</h3>
+        <div class="chart"><canvas id="cLob"></canvas></div>
+      </div>
+      <div class="card span-6">
+        <h3>By worksite state (top 15)</h3>
+        <div class="chart tall"><canvas id="cAppState"></canvas></div>
+      </div>
+      <div class="card span-6">
+        <h3>By worksite city (top 15)</h3>
+        <div class="chart tall"><canvas id="cAppCity"></canvas></div>
+      </div>
+      <div class="card span-12">
+        <h3>By month (Application Date)</h3>
+        <div class="chart" style="height:320px"><canvas id="cMois"></canvas></div>
+      </div>
+      <div class="card span-12">
+        <div class="toolbar">
+          <h3>Dynamic table: applications</h3>
+          <label class="f">Dimension<select id="dApps"></select></label>
+        </div>
+        <div class="tbl-wrap" id="tApps"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== SECTION 2 : PLACEMENTS ===================== -->
+  <section class="section" id="sec-plc">
+    <div class="section-head">
+      <div>
+        <h2>2. Placements analysis</h2>
+      </div>
+      <div class="section-filters">
+        <label class="f">Placement type<select id="fType"></select></label>
+        <label class="f">Priority<select id="fPrio"></select></label>
+        <label class="f">Worksite State<select id="fPState"></select></label>
+        <label class="f">Worksite City<select id="fPCity"></select></label>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="card span-8">
+        <h3>By industry</h3>
+        <div class="chart" style="height:320px"><canvas id="cInd"></canvas></div>
+      </div>
+      <div class="card span-4">
+        <h3>By placement type</h3>
+        <div class="chart" style="height:320px"><canvas id="cType"></canvas></div>
+      </div>
+      <div class="card span-4">
+        <h3>By priority</h3>
+        <div class="chart"><canvas id="cPrio"></canvas></div>
+      </div>
+      <div class="card span-4">
+        <h3>By worksite state (top 15)</h3>
+        <div class="chart tall"><canvas id="cPlcState"></canvas></div>
+      </div>
+      <div class="card span-4">
+        <h3>By worksite city (top 15)</h3>
+        <div class="chart tall"><canvas id="cPlcCity"></canvas></div>
+      </div>
+      <div class="card span-12">
+        <h3>Applications vs placements by month</h3>
+        <div class="chart" style="height:320px"><canvas id="cPlcMois"></canvas></div>
+      </div>
+      <div class="card span-12">
+        <div class="toolbar">
+          <h3>Dynamic table: placements</h3>
+          <label class="f">Dimension<select id="dPlc"></select></label>
+        </div>
+        <div class="tbl-wrap" id="tPlc"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Fictitious data calibrated on realistic volumes and mixes, for demonstration only. No real data is displayed.
+</footer>
+
+<script>
+/* ======================= 1. FICTITIOUS DATA ======================= */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const rnd = mulberry32(20261124);
+function pick(list){
+  const total = list.reduce((s,x)=>s+x[1],0);
+  let r = rnd()*total;
+  for (const [v,w] of list){ r -= w; if (r < 0) return v; }
+  return list[list.length-1][0];
+}
+/* Split an integer total into integer parts proportional to weights (exact sum). */
+function allocate(total, weights){
+  const s = weights.reduce((a,b)=>a+b,0);
+  const raw = weights.map(w => total * w / s);
+  const out = raw.map(Math.floor);
+  let rem = total - out.reduce((a,b)=>a+b,0);
+  const order = raw.map((v,i)=>({i, f:v-Math.floor(v)})).sort((a,b)=>b.f-a.f);
+  for (let j=0; rem>0; j++, rem--) out[order[j % order.length].i]++;
+  return out;
+}
+
+const MONTHS = ['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06','2026-07','2026-08','2026-09','2026-10','2026-11'];
+const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov'];
+const monthLabel = ym => MONTH_LABELS[+ym.slice(5,7)-1] + ' ' + ym.slice(0,4);
+
+/* Monthly application volumes (calibrated on realistic volumes, Jan-Nov 2026; Nov is partial). */
+const APPS_MONTHLY = [211240,212657,207143,169760,155327,117565,16026,148418,145442,162121,40435];
+
+const CHANNELS = [
+  {name:'randstad web', w:1354775, from:'2026-01'},
+  {name:'indeed',       w:210246,  from:'2026-01'},
+  {name:'ziprecruiter', w:21111,   from:'2026-08'}
+];
+const OPCO_LOB = [
+  {opco:'RT',  lob:'RT',  w:782348},
+  {opco:'RGS', lob:'OP',  w:496613},
+  {opco:'RGS', lob:'RIS', w:172443},
+  {opco:'RGS', lob:'ML',  w:134730}
+];
+const CATS_RGS = [
+  ['Call Center / Customer Service',105015],['Non-Clinical Healthcare',78441],['Warehouse / Forklift / Pick-Pack',45394],
+  ['Office Assistants / Receptionists',40752],['Accounts Payable / Receivable',36352],['Human Resources',15648],
+  ['Machine Operators / Toolmakers',13356],['Other categories',131029]];
+
+const INDUSTRIES = [
+  ['Healthcare & Life Sciences',18],['Banking, Financial Services & Insurance',16],
+  ['Telecommunications, Media & Technology',14],['Consumer & Retail',13],['Industrial & Manufacturing',12],
+  ['Transportation & Logistics',8],['Professional Services',8],['Public Sector',6],['Energy & Utilities',5]];
+const PLC_TYPES = [['Contract',16363],['Solutions',4416],['Contract to Perm',1459],['Permanent',1101],['GDC Staffing',347],['GDC Solutions',339]];
+const PRIORITIES = [['P1',18810],['P2',4320],['P0',712],['Not set',183]];
+
+/* Worksite State (job location) weights, calibrated on the job extract. */
+const STATE_W = [
+  ['TX',7906],['NC',7065],['CA',5528],['NJ',4400],['PA',3354],['IL',2532],['NY',2282],['AZ',1933],['FL',1921],['MA',1875],
+  ['OH',1598],['MN',1402],['WA',1393],['VA',1367],['GA',1355],['MO',1153],['DC',888],['MI',841],['CT',755],['WI',712],
+  ['RI',711],['IA',603],['NH',506],['OR',452],['ON',117],['BC',10],['QC',8],['NS',2],['Unknown',2478]];
+/* Worksite City weights within each state (fictitious but realistic cities). */
+const CITY_W = {
+  TX:[['Houston',40],['Dallas',30],['Austin',15],['San Antonio',15]],
+  NC:[['Charlotte',50],['Raleigh',30],['Greensboro',20]],
+  CA:[['Los Angeles',35],['San Francisco',25],['San Diego',20],['Irvine',20]],
+  NJ:[['Newark',40],['Jersey City',30],['Princeton',30]],
+  PA:[['Philadelphia',60],['Pittsburgh',40]],
+  IL:[['Chicago',80],['Naperville',20]],
+  NY:[['New York',70],['Albany',15],['Buffalo',15]],
+  AZ:[['Phoenix',70],['Tempe',30]],
+  FL:[['Tampa',40],['Orlando',35],['Miami',25]],
+  MA:[['Boston',40],['Woburn',35],['Burlington',25]],
+  OH:[['Columbus',60],['Cleveland',40]],
+  MN:[['Minneapolis',70],['St. Paul',30]],
+  WA:[['Seattle',70],['Bellevue',30]],
+  VA:[['Richmond',50],['Reston',50]],
+  GA:[['Atlanta',100]],
+  MO:[['St. Louis',60],['Kansas City',40]],
+  DC:[['Washington',100]],
+  MI:[['Detroit',60],['Ann Arbor',40]],
+  CT:[['Hartford',50],['Stamford',50]],
+  WI:[['Milwaukee',60],['Madison',40]],
+  RI:[['Providence',100]],
+  IA:[['Des Moines',100]],
+  NH:[['Manchester',50],['Nashua',50]],
+  OR:[['Portland',100]],
+  ON:[['Toronto',60],['Mississauga',40]],
+  BC:[['Vancouver',100]],
+  QC:[['Montreal',100]],
+  NS:[['Halifax',100]],
+  Unknown:[['Unknown',100]]
+};
+const ALL_CITIES = [...new Set(Object.values(CITY_W).flat().map(c=>c[0]))].sort();
+
+/* Applications: aggregated cube, each record = n applications, split by location. Monthly totals are exact. */
+const APPS = [];
+function addApp(m, ch, cat, opco, lob, n){
+  const sAlloc = allocate(n, STATE_W.map(s=>s[1]));
+  STATE_W.forEach(([st], si) => {
+    const k = sAlloc[si];
+    if (!k) return;
+    const cities = CITY_W[st];
+    const cAlloc = allocate(k, cities.map(c=>c[1]));
+    cities.forEach(([city], ci) => { if (cAlloc[ci]) APPS.push({m, ch, cat, opco, lob, st, city, n:cAlloc[ci]}); });
+  });
+}
+APPS_MONTHLY.forEach((total, mi) => {
+  const m = MONTHS[mi];
+  const avail = CHANNELS.filter(c => m >= c.from);
+  const chAlloc = allocate(total, avail.map(c=>c.w));
+  avail.forEach((c, ci) => {
+    const oAlloc = allocate(chAlloc[ci], OPCO_LOB.map(o=>o.w));
+    OPCO_LOB.forEach((o, oi) => {
+      const k = oAlloc[oi];
+      if (!k) return;
+      if (o.opco === 'RT'){ addApp(m, c.name, 'Unknown', o.opco, o.lob, k); return; }
+      const cAlloc = allocate(k, CATS_RGS.map(x=>x[1]));
+      CATS_RGS.forEach((x, xi) => { if (cAlloc[xi]) addApp(m, c.name, x[0], o.opco, o.lob, cAlloc[xi]); });
+    });
+  });
+});
+
+/* Placements: 14,871 placements starting in 2026, one record each, located through their job. */
+const PLC = [];
+const plcMonthly = allocate(14871, APPS_MONTHLY);
+plcMonthly.forEach((k, mi) => {
+  for (let i=0; i<k; i++){
+    const ol = pick(OPCO_LOB.map(o=>[o, o.w]));
+    const st = pick(STATE_W);
+    PLC.push({m:MONTHS[mi], ind:pick(INDUSTRIES), type:pick(PLC_TYPES), prio:pick(PRIORITIES),
+              st, city:pick(CITY_W[st]), opco:ol.opco, lob:ol.lob, n:1});
+  }
+});
+
+/* ======================= 2. STATE AND FILTERS ======================= */
+const DEFAULT_STATE = { debut:'2026-01', fin:'2026-11', opco:'', lob:'', ch:'', cat:'', aSt:'', aCity:'', type:'', prio:'', pSt:'', pCity:'', dApps:'canal', dPlc:'industrie' };
+const state = Object.assign({}, DEFAULT_STATE);
+
+const DIM_APPS = {
+  canal:{label:'Channel', f:a=>a.ch},
+  categorie:{label:'Job category', f:a=>a.cat},
+  opco:{label:'OPCO', f:a=>a.opco},
+  lob:{label:'LOB', f:a=>a.lob},
+  etat:{label:'Worksite State', f:a=>a.st},
+  ville:{label:'Worksite City', f:a=>a.city},
+  mois:{label:'Month (Application Date)', f:a=>a.m, month:true}
+};
+const DIM_PLC = {
+  industrie:{label:'Industry', f:p=>p.ind},
+  type:{label:'Placement type', f:p=>p.type},
+  priorite:{label:'Priority', f:p=>p.prio},
+  etat:{label:'Worksite State', f:p=>p.st},
+  ville:{label:'Worksite City', f:p=>p.city},
+  mois:{label:'Start month', f:p=>p.m, month:true}
+};
+
+function periodBounds(){ return state.debut <= state.fin ? [state.debut, state.fin] : [state.fin, state.debut]; }
+function inPeriod(m){ const [lo,hi] = periodBounds(); return m >= lo && m <= hi; }
+function periodMonths(){ return MONTHS.filter(inPeriod); }
+function globalOk(r){ return (!state.opco || r.opco===state.opco) && (!state.lob || r.lob===state.lob); }
+
+function filterApps(skip=[]){
+  return APPS.filter(a => inPeriod(a.m) && globalOk(a)
+    && (skip.includes('ch')    || !state.ch    || a.ch===state.ch)
+    && (skip.includes('cat')   || !state.cat   || a.cat===state.cat)
+    && (skip.includes('aSt')   || !state.aSt   || a.st===state.aSt)
+    && (skip.includes('aCity') || !state.aCity || a.city===state.aCity));
+}
+function filterPlc(skip=[]){
+  return PLC.filter(p => inPeriod(p.m) && globalOk(p)
+    && (skip.includes('type')  || !state.type  || p.type===state.type)
+    && (skip.includes('prio')  || !state.prio  || p.prio===state.prio)
+    && (skip.includes('pSt')   || !state.pSt   || p.st===state.pSt)
+    && (skip.includes('pCity') || !state.pCity || p.city===state.pCity));
+}
+
+/* ======================= 3. HELPERS ======================= */
+const fmt = n => Number(n).toLocaleString('en-US');
+const pct = (a,b) => b ? (100*a/b).toFixed(1) + '%' : '0%';
+const PALETTE = ['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16','#64748b','#f97316','#14b8a6','#a855f7','#eab308'];
+const colorMap = {};
+function colorFor(k){
+  if (!(k in colorMap)) colorMap[k] = PALETTE[Object.keys(colorMap).length % PALETTE.length];
+  return colorMap[k];
+}
+function group(arr, f, byKey=false){
+  const m = new Map();
+  for (const r of arr){ const k = f(r); m.set(k, (m.get(k)||0) + r.n); }
+  const rows = [...m.entries()];
+  rows.sort(byKey ? (a,b)=>String(a[0]).localeCompare(String(b[0])) : (a,b)=>b[1]-a[1]);
+  return rows;
+}
+
+/* ======================= 4. CHARTS ======================= */
+const charts = {};
+const GRID = '#eef2f7';
+function setChart(id, type, labels, datasets, opts={}){
+  if (charts[id]){
+    charts[id].data.labels = labels;
+    charts[id].data.datasets = datasets;
+    charts[id].update();
+    return;
+  }
+  const defaultScales = type==='doughnut' ? {} : {
+    x:{grid:{display:false}},
+    y:{beginAtZero:true,grid:{color:GRID}}
+  };
+  charts[id] = new Chart(document.getElementById(id), {
+    type,
+    data:{labels, datasets},
+    options:Object.assign({
+      responsive:true,
+      maintainAspectRatio:false,
+      animation:{duration:250},
+      plugins:{legend:{display: type==='doughnut' || datasets.length>1, position:'bottom', labels:{boxWidth:10,usePointStyle:true}}},
+      scales: defaultScales
+    }, opts)
+  });
+}
+const HBAR = {indexAxis:'y', scales:{x:{beginAtZero:true,grid:{color:GRID}}, y:{grid:{display:false}}}};
+const STACKED = {scales:{x:{stacked:true,grid:{display:false}}, y:{stacked:true,beginAtZero:true,grid:{color:GRID}}}};
+
+function singleBar(labels, data, color){
+  return [{label:'Volume', data, backgroundColor: color ? labels.map(()=>color) : labels.map(colorFor), borderRadius:6, maxBarThickness:46}];
+}
+function doughnut(labels, data){
+  return [{data, backgroundColor:labels.map(colorFor), borderWidth:2, borderColor:'#fff'}];
+}
+
+/* ======================= 5. DYNAMIC TABLES ======================= */
+function renderTable(id, rows, label, isMonth){
+  const el = document.getElementById(id);
+  const tot = rows.reduce((s,r)=>s+r[1],0);
+  const max = Math.max(1, ...rows.map(r=>r[1]));
+  const body = rows.length
+    ? rows.map(([k,v]) => `<tr><td>${isMonth ? monthLabel(k) : k}</td><td class="num">${fmt(v)}</td><td class="num">${pct(v,tot)}</td><td><div class="bar"><span style="width:${(v/max*100).toFixed(1)}%"></span></div></td></tr>`).join('')
+    : '<tr><td colspan="4">No data for these filters</td></tr>';
+  el.innerHTML = `<table><thead><tr><th>${label}</th><th class="num">Volume</th><th class="num">Share</th><th>Distribution</th></tr></thead><tbody>${body}</tbody><tfoot><tr><th>Total</th><th class="num">${fmt(tot)}</th><th class="num">100%</th><th></th></tr></tfoot></table>`;
+}
+
+/* ======================= 6. RENDERING ======================= */
+function renderApps(){
+  const months = periodMonths();
+
+  const ch = group(filterApps(['ch']), a=>a.ch);
+  setChart('cCanal','bar', ch.map(r=>r[0]), singleBar(ch.map(r=>r[0]), ch.map(r=>r[1])));
+
+  const cat = group(filterApps(['cat']), a=>a.cat).slice(0,10);
+  setChart('cCat','bar', cat.map(r=>r[0]), singleBar(cat.map(r=>r[0]), cat.map(r=>r[1])), HBAR);
+
+  const opco = group(filterApps(), a=>a.opco);
+  setChart('cOpco','doughnut', opco.map(r=>r[0]), doughnut(opco.map(r=>r[0]), opco.map(r=>r[1])));
+
+  const lob = group(filterApps(), a=>a.lob);
+  setChart('cLob','bar', lob.map(r=>r[0]), singleBar(lob.map(r=>r[0]), lob.map(r=>r[1])));
+
+  const aSt = group(filterApps(['aSt']), a=>a.st).slice(0,15);
+  setChart('cAppState','bar', aSt.map(r=>r[0]), singleBar(aSt.map(r=>r[0]), aSt.map(r=>r[1]), '#2563eb'), HBAR);
+
+  const aCity = group(filterApps(['aCity']), a=>a.city).slice(0,15);
+  setChart('cAppCity','bar', aCity.map(r=>r[0]), singleBar(aCity.map(r=>r[0]), aCity.map(r=>r[1]), '#10b981'), HBAR);
+
+  const A = filterApps();
+  const cnt = {};
+  A.forEach(a=>{ const k=a.ch+'|'+a.m; cnt[k]=(cnt[k]||0)+a.n; });
+  const datasets = CHANNELS.map(c=>({label:c.name, data:months.map(m=>cnt[c.name+'|'+m]||0), backgroundColor:colorFor(c.name), borderRadius:4}));
+  setChart('cMois','bar', months.map(monthLabel), datasets, STACKED);
+
+  const dim = DIM_APPS[state.dApps];
+  renderTable('tApps', group(A, dim.f, !!dim.month), dim.label, !!dim.month);
+}
+
+function renderPlc(){
+  const months = periodMonths();
+
+  const ind = group(filterPlc(), p=>p.ind);
+  setChart('cInd','bar', ind.map(r=>r[0]), singleBar(ind.map(r=>r[0]), ind.map(r=>r[1])), HBAR);
+
+  const type = group(filterPlc(['type']), p=>p.type);
+  setChart('cType','doughnut', type.map(r=>r[0]), doughnut(type.map(r=>r[0]), type.map(r=>r[1])));
+
+  const prio = group(filterPlc(['prio']), p=>p.prio);
+  setChart('cPrio','bar', prio.map(r=>r[0]), singleBar(prio.map(r=>r[0]), prio.map(r=>r[1])));
+
+  const pSt = group(filterPlc(['pSt']), p=>p.st).slice(0,15);
+  setChart('cPlcState','bar', pSt.map(r=>r[0]), singleBar(pSt.map(r=>r[0]), pSt.map(r=>r[1]), '#2563eb'), HBAR);
+
+  const pCity = group(filterPlc(['pCity']), p=>p.city).slice(0,15);
+  setChart('cPlcCity','bar', pCity.map(r=>r[0]), singleBar(pCity.map(r=>r[0]), pCity.map(r=>r[1]), '#10b981'), HBAR);
+
+  const cA = {}, cP = {};
+  filterApps().forEach(a=>{ cA[a.m]=(cA[a.m]||0)+a.n; });
+  filterPlc().forEach(p=>{ cP[p.m]=(cP[p.m]||0)+p.n; });
+  setChart('cPlcMois','bar', months.map(monthLabel), [
+    {type:'bar', label:'Applications', data:months.map(m=>cA[m]||0), backgroundColor:'#bfdbfe', borderRadius:4},
+    {type:'line', label:'Placements', data:months.map(m=>cP[m]||0), borderColor:'#10b981', backgroundColor:'#10b981', tension:.35, borderWidth:3, pointRadius:4, yAxisID:'y'}
+  ]);
+
+  const dim = DIM_PLC[state.dPlc];
+  renderTable('tPlc', group(filterPlc(), dim.f, !!dim.month), dim.label, !!dim.month);
+}
+
+function render(){
+  renderApps();
+  renderPlc();
+}
+
+/* ======================= 7. INITIALISATION ======================= */
+function fillSelect(id, items, allLabel){
+  document.getElementById(id).innerHTML = `<option value="">${allLabel}</option>` + items.map(([v,l])=>`<option value="${v}">${l||v}</option>`).join('');
+}
+function fillMonths(id){
+  document.getElementById(id).innerHTML = MONTHS.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
+}
+function fillDims(id, dims){
+  document.getElementById(id).innerHTML = Object.entries(dims).map(([k,d])=>`<option value="${k}">${d.label}</option>`).join('');
+}
+function fillCities(id, st){
+  const list = st ? CITY_W[st].map(c=>c[0]) : ALL_CITIES;
+  document.getElementById(id).innerHTML = `<option value="">All cities</option>` + list.map(c=>`<option value="${c}">${c}</option>`).join('');
+}
+function syncSelects(){
+  const map = {gDebut:'debut', gFin:'fin', gOpco:'opco', gLob:'lob', fCanal:'ch', fCat:'cat', fAState:'aSt', fACity:'aCity',
+               fType:'type', fPrio:'prio', fPState:'pSt', fPCity:'pCity', dApps:'dApps', dPlc:'dPlc'};
+  for (const [id,key] of Object.entries(map)) document.getElementById(id).value = state[key];
+}
+
+function init(){
+  fillMonths('gDebut'); fillMonths('gFin');
+  fillSelect('gOpco', [['RT','RT'],['RGS','RGS']], 'All OPCO');
+  fillSelect('gLob', [['RT','RT'],['OP','OP'],['RIS','RIS'],['ML','ML']], 'All LOB');
+  fillSelect('fCanal', CHANNELS.map(c=>[c.name]), 'All channels');
+  fillSelect('fCat', CATS_RGS.map(c=>[c[0]]).concat([['Unknown']]), 'All categories');
+  fillSelect('fAState', STATE_W.map(s=>[s[0]]), 'All states');
+  fillSelect('fType', PLC_TYPES.map(t=>[t[0]]), 'All types');
+  fillSelect('fPrio', PRIORITIES.map(p=>[p[0]]), 'All priorities');
+  fillSelect('fPState', STATE_W.map(s=>[s[0]]), 'All states');
+  fillCities('fACity', '');
+  fillCities('fPCity', '');
+  fillDims('dApps', DIM_APPS);
+  fillDims('dPlc', DIM_PLC);
+
+  const bind = (id, key) => document.getElementById(id).addEventListener('change', e => { state[key] = e.target.value; render(); });
+  bind('gDebut','debut'); bind('gFin','fin'); bind('gOpco','opco'); bind('gLob','lob');
+  bind('fCanal','ch'); bind('fCat','cat'); bind('fType','type'); bind('fPrio','prio');
+  bind('dApps','dApps'); bind('dPlc','dPlc');
+
+  document.getElementById('fAState').addEventListener('change', e => {
+    state.aSt = e.target.value; state.aCity = ''; fillCities('fACity', state.aSt); render();
+  });
+  document.getElementById('fPState').addEventListener('change', e => {
+    state.pSt = e.target.value; state.pCity = ''; fillCities('fPCity', state.pSt); render();
+  });
+  bind('fACity','aCity'); bind('fPCity','pCity');
+
+  document.getElementById('gReset').addEventListener('click', () => {
+    Object.assign(state, DEFAULT_STATE);
+    fillCities('fACity', ''); fillCities('fPCity', '');
+    syncSelects();
+    render();
+  });
+
+  syncSelects();
+  render();
+}
+init();
+</script>
+</body>
+</html>
